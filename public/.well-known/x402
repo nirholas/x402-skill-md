@@ -1,0 +1,202 @@
+{
+  "x402Version": 1,
+  "name": "x402-skill-md",
+  "description": "The skill.md toolkit: generate and validate agent-discoverable skill files from OpenAPI specs. Defines the SKILL-MD format used across the x402 Suite. Pay in USDC on Base or Solana; your client picks the rail.",
+  "homepage": "https://nirholas.github.io/x402-skill-md/",
+  "skill": "/skill.md",
+  "openapi": "/openapi.json",
+  "spec": "/spec",
+  "rules": "/rules",
+  "skillMdVersion": "1.0",
+  "contact": "nichxbt@gmail.com",
+  "package": "x402-skill-md",
+  "cli": "npx x402-skill-md",
+  "facilitator": {
+    "evm": "https://x402.org/facilitator",
+    "solana": "https://facilitator.payai.network"
+  },
+  "rails": [
+    {
+      "rail": "evm",
+      "network": "base-sepolia",
+      "asset": "USDC",
+      "assetAddress": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+      "payTo": "0x40252CFDF8B20Ed757D61ff157719F33Ec332402",
+      "facilitator": "https://x402.org/facilitator"
+    },
+    {
+      "rail": "solana",
+      "network": "solana",
+      "asset": "USDC",
+      "assetAddress": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+      "payTo": "WwwuGbqHrwF5RG89KhUbmRWEvjnRH9k5kVM5p7T3WwW",
+      "facilitator": "https://facilitator.payai.network",
+      "feePayer": "2wKupLR9q6wXYppw8Gr2NvWxKBUqm4PPJKkQfoxHDBg4"
+    }
+  ],
+  "resources": [
+    {
+      "resource": "POST /generate",
+      "description": "Generate a conformant skill.md from a posted OpenAPI 3.x document, with a validation report for the result",
+      "price": "$0.01",
+      "asset": "USDC",
+      "networks": ["base-sepolia", "base", "solana", "solana-devnet"],
+      "accepts": [
+        {
+          "scheme": "exact",
+          "network": "base-sepolia",
+          "asset": "USDC",
+          "payTo": "0x40252CFDF8B20Ed757D61ff157719F33Ec332402",
+          "maxAmountRequired": "10000"
+        },
+        {
+          "scheme": "exact",
+          "network": "solana",
+          "asset": "USDC",
+          "payTo": "WwwuGbqHrwF5RG89KhUbmRWEvjnRH9k5kVM5p7T3WwW",
+          "maxAmountRequired": "10000"
+        }
+      ],
+      "inputSchema": {
+        "type": "object",
+        "description": "The OpenAPI document itself, or { openapi, options }.",
+        "properties": {
+          "openapi": { "type": "object" },
+          "options": {
+            "type": "object",
+            "properties": {
+              "baseUrl": { "type": "string" },
+              "contact": { "type": "string" },
+              "defaultPrice": { "type": "string" },
+              "frontmatter": { "type": "boolean", "default": true },
+              "rails": { "type": "array", "items": { "type": "object" } }
+            }
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "required": ["skillMdVersion", "skillMd", "service", "validation", "generatedAt"],
+        "properties": {
+          "skillMdVersion": { "type": "string" },
+          "skillMd": { "type": "string", "description": "The generated file, ready to commit." },
+          "service": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "baseUrl": { "type": "string" },
+              "endpoints": { "type": "integer" },
+              "paid": { "type": "integer" }
+            }
+          },
+          "warnings": { "type": "array", "items": { "type": "string" } },
+          "validation": {
+            "type": "object",
+            "properties": {
+              "valid": { "type": "boolean" },
+              "score": { "type": "integer" },
+              "summary": { "type": "object" },
+              "findings": { "type": "array", "items": { "type": "object" } }
+            }
+          },
+          "generatedAt": { "type": "string", "format": "date-time" }
+        }
+      }
+    },
+    {
+      "resource": "POST /validate",
+      "description": "Validate a skill.md against all 23 SKILL-MD rules and return a report with a fix per finding",
+      "price": "$0.002",
+      "asset": "USDC",
+      "networks": ["base-sepolia", "base", "solana", "solana-devnet"],
+      "accepts": [
+        {
+          "scheme": "exact",
+          "network": "base-sepolia",
+          "asset": "USDC",
+          "payTo": "0x40252CFDF8B20Ed757D61ff157719F33Ec332402",
+          "maxAmountRequired": "2000"
+        },
+        {
+          "scheme": "exact",
+          "network": "solana",
+          "asset": "USDC",
+          "payTo": "WwwuGbqHrwF5RG89KhUbmRWEvjnRH9k5kVM5p7T3WwW",
+          "maxAmountRequired": "2000"
+        }
+      ],
+      "inputSchema": {
+        "oneOf": [
+          { "type": "string", "description": "The file as text/markdown." },
+          {
+            "type": "object",
+            "required": ["skillMd"],
+            "properties": { "skillMd": { "type": "string" } }
+          }
+        ]
+      },
+      "outputSchema": {
+        "type": "object",
+        "required": ["skillMdVersion", "valid", "score", "summary", "service", "findings", "checkedAt"],
+        "properties": {
+          "skillMdVersion": { "type": "string" },
+          "valid": { "type": "boolean", "description": "True when there are zero errors." },
+          "score": { "type": "integer", "minimum": 0, "maximum": 100 },
+          "summary": {
+            "type": "object",
+            "properties": {
+              "errors": { "type": "integer" },
+              "warnings": { "type": "integer" },
+              "infos": { "type": "integer" }
+            }
+          },
+          "service": {
+            "type": "object",
+            "properties": {
+              "name": { "type": ["string", "null"] },
+              "baseUrl": { "type": ["string", "null"] },
+              "contact": { "type": ["string", "null"] },
+              "endpoints": { "type": "array", "items": { "type": "object" } },
+              "rails": {
+                "type": "object",
+                "properties": {
+                  "evm": { "type": "boolean" },
+                  "solana": { "type": "boolean" }
+                }
+              },
+              "dualRail": { "type": "boolean" }
+            }
+          },
+          "findings": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["rule", "severity", "title", "detail", "fix"],
+              "properties": {
+                "rule": { "type": "string" },
+                "severity": { "type": "string", "enum": ["error", "warning", "info"] },
+                "title": { "type": "string" },
+                "detail": { "type": "string" },
+                "fix": { "type": "string" },
+                "line": { "type": "integer" }
+              }
+            }
+          },
+          "checkedAt": { "type": "string", "format": "date-time" }
+        }
+      }
+    }
+  ],
+  "freeResources": [
+    {
+      "resource": "GET /rules",
+      "description": "The full SKILL-MD rule catalogue as JSON — id, severity, title and fix for each of the 23 rules",
+      "price": "free"
+    },
+    {
+      "resource": "GET /spec",
+      "description": "The SKILL-MD format specification, as Markdown",
+      "price": "free"
+    }
+  ]
+}

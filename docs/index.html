@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>x402-skill-md — the skill.md format, generator and validator</title>
+<meta name="description" content="The SKILL-MD format specification, plus a library, CLI and x402-paid service to generate agent-discoverable skill.md files from OpenAPI and validate them against 23 rules.">
+<style>
+:root{
+  --accent:#0052ff;--accent-2:#14f195;--bg:#ffffff;--fg:#0a0c10;--muted:#57606a;
+  --card:#f6f8fa;--border:#d0d7de;--code-bg:#0d1117;--code-fg:#e6edf3;
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#0d1117;--fg:#e6edf3;--muted:#9198a1;--card:#161b22;--border:#30363d}
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--fg);line-height:1.6;-webkit-text-size-adjust:100%}
+.wrap{max-width:900px;margin:0 auto;padding:0 20px}
+header{padding:72px 0 40px;text-align:center}
+.badge{display:inline-block;font-size:13px;font-weight:600;color:var(--accent);border:1px solid var(--accent);border-radius:999px;padding:2px 12px;margin-bottom:16px}
+h1{font-size:44px;letter-spacing:-1px;margin-bottom:12px}
+@media (max-width:560px){h1{font-size:32px}}
+.tagline{font-size:19px;color:var(--muted);max-width:660px;margin:0 auto 24px}
+.install{display:inline-block;max-width:100%;overflow-x:auto;background:var(--code-bg);color:var(--code-fg);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:14px;padding:10px 18px;border-radius:8px;margin-bottom:24px;white-space:nowrap}
+.btns a{display:inline-block;margin:4px 6px;padding:10px 20px;border-radius:8px;font-weight:600;text-decoration:none;font-size:15px}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-ghost{border:1px solid var(--border);color:var(--fg)}
+section{padding:32px 0}
+h2{font-size:26px;margin-bottom:14px;letter-spacing:-.5px}
+h3{font-size:18px;margin:20px 0 8px}
+p{margin-bottom:12px}
+ul{margin:0 0 12px 22px}
+li{margin-bottom:6px}
+.tablewrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:15px;min-width:520px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+th{color:var(--muted);font-size:13px;text-transform:uppercase;letter-spacing:.05em}
+td code,p code,li code,th code{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:1px 6px;font-size:13px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.price{color:var(--accent);font-weight:700;white-space:nowrap}
+pre{background:var(--code-bg);color:var(--code-fg);border-radius:10px;padding:18px;overflow-x:auto;font-size:13.5px;line-height:1.55;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.rails{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.rail{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 18px}
+.rail b{display:block;font-size:16px;margin-bottom:6px}
+.rail .k{color:var(--muted);font-size:13px}
+.rail code{font-size:12px;word-break:break-all}
+figure{margin:0}
+figcaption{color:var(--muted);font-size:13px;text-align:center;margin-top:8px}
+svg{max-width:100%;height:auto;display:block;margin:0 auto}
+footer{padding:40px 0;color:var(--muted);font-size:14px;text-align:center;border-top:1px solid var(--border);margin-top:48px}
+footer a{color:var(--accent);text-decoration:none}
+a{color:var(--accent)}
+</style>
+</head>
+<body>
+<header class="wrap">
+  <div class="badge">x402 · USDC on Base + Solana</div>
+  <h1>x402-skill-md</h1>
+  <p class="tagline">The <code>skill.md</code> toolkit: the <b>format specification</b>, a generator, and a validator that returns a fix per finding. Ships as a library, a CLI, and an x402-paid service.</p>
+  <div class="install">npx x402-skill-md generate openapi.json -o skill.md</div>
+  <div class="btns">
+    <a class="btn-primary" href="https://github.com/nirholas/x402-skill-md">GitHub</a>
+    <a class="btn-ghost" href="tutorial.md">Tutorial</a>
+    <a class="btn-ghost" href="api.md">API Reference</a>
+    <a class="btn-ghost" href="agents.md">For AI Agents</a>
+    <a class="btn-ghost" href="spec.md"><b>Specification</b></a>
+  </div>
+</header>
+
+<section class="wrap">
+  <h2>Pricing</h2>
+  <div class="tablewrap"><table>
+    <tr><th>Route</th><th>Price</th><th>What lands in the 200 body</th></tr>
+    <tr><td><code>POST /generate</code></td><td class="price">$0.01</td><td>The generated <code>skill.md</code>, plus a validation report for it — one call gives you a file you can commit</td></tr>
+    <tr><td><code>GET /rules</code></td><td class="price">free</td><td>The whole rule catalogue as JSON: id, severity, title and fix for each of the 23 rules</td></tr>
+    <tr><td><code>GET /spec</code></td><td class="price">free</td><td>The SKILL-MD format specification</td></tr>
+    <tr><td><code>POST /validate</code></td><td class="price">$0.002</td><td>The full report: every finding with its rule id, line, what is wrong <i>in this document</i>, and the exact fix</td></tr>
+    <tr><td><code>GET /</code> · <code>/health</code> · <code>/skill.md</code> · <code>/.well-known/x402</code> · <code>/openapi.json</code></td><td class="price">free</td><td>Discovery</td></tr>
+  </table></div>
+</section>
+
+<section class="wrap">
+  <h2>How a paid call works</h2>
+  <figure>
+  <svg viewBox="0 0 880 250" role="img" aria-label="Flow: the agent requests a resource, the server answers 402 with two payment rails, the agent signs on Base or Solana, the facilitator verifies and settles, and the server returns 200 with the artifact.">
+    <defs>
+      <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"/>
+      </marker>
+    </defs>
+    <g font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif" text-anchor="middle">
+      <!-- 1. agent -->
+      <rect x="8" y="93" width="118" height="64" rx="10" fill="var(--card)" stroke="var(--border)"/>
+      <text x="67" y="118" font-size="14" font-weight="600" fill="var(--fg)">Agent</text>
+      <text x="67" y="137" font-size="11" fill="var(--muted)">GET /resource</text>
+  
+      <!-- 2. the 402 -->
+      <rect x="166" y="93" width="170" height="64" rx="10" fill="var(--card)" stroke="var(--accent)"/>
+      <text x="251" y="116" font-size="14" font-weight="600" fill="var(--accent)">402 Payment Required</text>
+      <text x="251" y="136" font-size="11" fill="var(--muted)">accepts: [ two rails ]</text>
+  
+      <!-- 3a. EVM rail -->
+      <rect x="376" y="25" width="164" height="58" rx="10" fill="var(--card)" stroke="var(--border)"/>
+      <text x="458" y="47" font-size="13" font-weight="600" fill="var(--fg)">USDC on Base</text>
+      <text x="458" y="65" font-size="11" fill="var(--muted)">EIP-3009 signature</text>
+  
+      <!-- 3b. Solana rail -->
+      <rect x="376" y="167" width="164" height="58" rx="10" fill="var(--card)" stroke="var(--border)"/>
+      <text x="458" y="189" font-size="13" font-weight="600" fill="var(--fg)">USDC on Solana</text>
+      <text x="458" y="207" font-size="11" fill="var(--muted)">signed SPL transfer</text>
+  
+      <text x="458" y="130" font-size="12" font-style="italic" fill="var(--muted)">the client picks</text>
+  
+      <!-- 4. settle -->
+      <rect x="576" y="93" width="170" height="64" rx="10" fill="var(--card)" stroke="var(--border)"/>
+      <text x="661" y="116" font-size="13" font-weight="600" fill="var(--fg)">X-PAYMENT</text>
+      <text x="661" y="136" font-size="11" fill="var(--muted)">facilitator: verify → settle</text>
+  
+      <!-- 5. the goods -->
+      <rect x="786" y="93" width="86" height="64" rx="10" fill="var(--accent)"/>
+      <text x="829" y="118" font-size="14" font-weight="700" fill="#fff">200</text>
+      <text x="829" y="136" font-size="11" fill="#dbe6ff">artifact</text>
+  
+      <g fill="none" stroke="var(--accent)" stroke-width="2" marker-end="url(#ah)">
+        <path d="M126,125 L158,125"/>
+        <path d="M336,116 C356,116 356,54 368,54"/>
+        <path d="M336,134 C356,134 356,196 368,196"/>
+        <path d="M540,54 C556,54 556,116 568,116"/>
+        <path d="M540,196 C556,196 556,134 568,134"/>
+        <path d="M746,125 L778,125"/>
+      </g>
+    </g>
+  </svg>
+    <figcaption>One round trip of overhead. Every 402 quotes both rails; the client signs whichever chain it holds USDC on.</figcaption>
+  </figure>
+</section>
+
+<section class="wrap">
+  <h2>Two rails, one price</h2>
+  <div class="rails">
+    <div class="rail">
+      <b>USDC on Base</b>
+      <div class="k">network <code>base-sepolia</code> / <code>base</code></div>
+      <div class="k">scheme <code>exact</code> · EIP-3009 <code>transferWithAuthorization</code></div>
+      <div class="k">payTo <code>0x40252CFDF8B20Ed757D61ff157719F33Ec332402</code></div>
+    </div>
+    <div class="rail">
+      <b>USDC on Solana</b>
+      <div class="k">network <code>solana</code> / <code>solana-devnet</code></div>
+      <div class="k">scheme <code>exact</code> · SPL <code>transferChecked</code>, fee sponsored</div>
+      <div class="k">payTo <code>WwwuGbqHrwF5RG89KhUbmRWEvjnRH9k5kVM5p7T3WwW</code></div>
+    </div>
+  </div>
+  <p style="margin-top:14px">Both rails appear in the <code>accepts</code> array of every 402. Settlement runs through
+  the <a href="https://x402.org/facilitator">x402 facilitator</a>, and the 200 carries an
+  <code>X-PAYMENT-RESPONSE</code> receipt naming the rail and the transaction.</p>
+</section>
+
+<section class="wrap">
+  <h2>Quickstart</h2>
+  <pre># as a CLI — free, no wallet needed
+npx x402-skill-md generate openapi.json -o skill.md
+npx x402-skill-md validate skill.md
+
+#   PASS  score 100/100  (0 errors, 0 warnings, 0 infos)
+#   service: x402-domains  endpoints: 2  rails: evm + solana
+#   No findings. This document is conformant.
+
+# as a library
+npm i x402-skill-md
+
+import { openapiToSkillMd, validateSkillMd } from "x402-skill-md";
+const { skillMd, warnings } = openapiToSkillMd(spec, { baseUrl: "https://api.example.com" });
+validateSkillMd(skillMd).valid;          // true
+validateSkillMd(skillMd).service.dualRail; // true
+
+# in CI — exits 1 on errors
+- run: npx x402-skill-md validate skill.md --strict</pre>
+</section>
+
+<section class="wrap">
+  <h2>What a skill.md is</h2>
+  <p>The file an AI agent reads to learn how to <b>use and pay for</b> an HTTP service — in one fetch, with no SDK and no human. It is Markdown, so a model can read it directly; it has a defined section grammar, so a parser can check it.</p>
+  <p>OpenAPI already describes shapes. It does not describe <b>what a call costs, in what asset, on which chains, to which address</b> — and for an agent with a wallet and no account, that is the load-bearing information. An agent has to answer three questions before it spends anything: can this service do what I need, what will it cost, and <i>can I pay at all</i>.</p>
+  <p><a href="spec.md"><b>Read the specification →</b></a></p>
+</section>
+
+<section class="wrap">
+  <h2>Dual rail is mandatory, not optional</h2>
+  <p>A conformant <code>skill.md</code> documents an EVM rail <b>and</b> a Solana rail — rules SM005 and SM006, both <code>error</code> severity. Three reasons:</p>
+  <ul>
+    <li>An agent's wallet lives on exactly <b>one</b> chain. A single-rail service is invisible to every agent on the other one, and it cannot learn that cheaply.</li>
+    <li>The 402 challenge already carries an <code>accepts</code> <b>array</b>. Two entries cost one extra object; the client picks. There is no protocol reason to publish one.</li>
+    <li>Discovery indexers filter on rails. A single-rail listing halves your reachable market for no gain.</li>
+  </ul>
+  <p>The spec also requires the <b>facilitator to be declared per rail</b>, because facilitators are chain-specific: the reference <code>x402.org</code> facilitator settles Base Sepolia only and will not settle a Solana payment. A document naming one facilitator for both rails is telling clients something false.</p>
+</section>
+
+<section class="wrap">
+  <h2>Findings carry fixes</h2>
+  <p>A validator that only says “invalid” is not worth paying for. Every finding names the rule, where it is, what is wrong <i>in this document</i>, and the remedy:</p>
+  <pre>{
+  "rule": "SM006",
+  "severity": "error",
+  "title": "No Solana payment rail documented",
+  "detail": "There is no Payment section, so no Solana rail is documented.",
+  "fix": "Name a Solana network (`solana` or `solana-devnet`) and its `payTo`
+          address in the Payment section. Every conformant skill.md is dual-rail:
+          an agent's wallet lives on one chain, and it must be able to tell from
+          this file alone whether it can pay."
+}</pre>
+  <p>23 rules: 10 errors, 10 warnings, 3 infos. <code>valid</code> is true when there are <b>zero errors</b>, independent of score; the score (100 − 12/error − 4/warning − 1/info) is a quality signal, <code>valid</code> is the gate.</p>
+</section>
+
+<section class="wrap">
+  <h2>Why a paid service at all</h2>
+  <p>The library is free on npm and the CLI does the same work locally, so the honest answer is: <b>the paid routes exist for agents.</b> An agent that has just written an OpenAPI document cannot <code>npm install</code> inside its own reasoning loop; it can make an HTTP request and pay a cent. Humans should use the CLI. <code>GET /rules</code> and <code>GET /spec</code> are free on both paths, because you should be able to see what you are being judged against before paying to be judged.</p>
+</section>
+
+<footer class="wrap">
+  <p>
+    <a href="https://github.com/nirholas/x402-skill-md">GitHub</a> ·
+    <a href="https://github.com/nirholas/x402-skill-md/blob/main/skill.md">skill.md</a> ·
+    <a href="https://github.com/nirholas/x402-skill-md/blob/main/public/.well-known/x402">.well-known/x402</a> ·
+    <a href="https://github.com/nirholas/x402-skill-md/blob/main/openapi.json">openapi.json</a> ·
+    <a href="https://x402.org">x402 protocol</a> ·
+    <a href="https://www.npmjs.com/package/x402-skill-md">npm</a>
+  </p>
+  <p>Part of the <a href="https://github.com/nirholas/x402-suite">x402 Suite</a> · Apache-2.0 · <a href="mailto:nichxbt@gmail.com">nichxbt@gmail.com</a></p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,454 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "x402-skill-md",
+    "version": "0.1.0",
+    "summary": "Generate and validate agent-discoverable skill.md files — the format specification, a library, a CLI, and a paid service.",
+    "description": "`skill.md` is the agent-facing contract file an x402 service ships at its root: what it does, what each call costs, on which chains it can be paid, and what comes back. This service generates a conformant skill.md from an OpenAPI document and validates an existing one against 23 rules, returning a fix per finding. It also defines the format — the specification is free at `GET /spec` and the rule catalogue at `GET /rules`. Paid routes speak x402: an unpaid request returns 402 with a dual-rail `accepts` array (USDC on Base and USDC on Solana) and the client picks the rail.",
+    "contact": { "name": "nirholas", "email": "nichxbt@gmail.com" },
+    "license": { "name": "Apache-2.0", "identifier": "Apache-2.0" }
+  },
+  "servers": [{ "url": "http://localhost:4029", "description": "local self-host" }],
+  "externalDocs": {
+    "description": "Format specification and docs",
+    "url": "https://nirholas.github.io/x402-skill-md/"
+  },
+  "paths": {
+    "/": {
+      "get": {
+        "operationId": "getServiceCard",
+        "summary": "Service card (free)",
+        "responses": {
+          "200": {
+            "description": "Prices, rails, format version, library and CLI hints.",
+            "content": { "application/json": { "schema": { "type": "object" } } }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "operationId": "getHealth",
+        "summary": "Liveness probe (free)",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": { "type": "boolean" },
+                    "uptime": { "type": "number" },
+                    "skillMdVersion": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rules": {
+      "get": {
+        "operationId": "getRules",
+        "summary": "The SKILL-MD rule catalogue (free)",
+        "description": "Free on purpose: you should be able to see what you are being judged against before paying to be judged.",
+        "responses": {
+          "200": {
+            "description": "Every rule with its id, severity, title and fix.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "skillMdVersion": { "type": "string" },
+                    "count": { "type": "integer" },
+                    "rules": { "type": "array", "items": { "$ref": "#/components/schemas/Rule" } }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/spec": {
+      "get": {
+        "operationId": "getSpec",
+        "summary": "The SKILL-MD format specification (free)",
+        "responses": {
+          "200": {
+            "description": "docs/spec.md",
+            "content": { "text/markdown": { "schema": { "type": "string" } } }
+          }
+        }
+      }
+    },
+    "/.well-known/x402": {
+      "get": {
+        "operationId": "getX402Manifest",
+        "summary": "x402 resource manifest (free)",
+        "responses": {
+          "200": {
+            "description": "Machine-readable listing of paid resources, prices and rails.",
+            "content": { "application/json": { "schema": { "type": "object" } } }
+          }
+        }
+      }
+    },
+    "/skill.md": {
+      "get": {
+        "operationId": "getSkillFile",
+        "summary": "Agent-facing skill file (free)",
+        "responses": {
+          "200": {
+            "description": "skill.md",
+            "content": { "text/markdown": { "schema": { "type": "string" } } }
+          }
+        }
+      }
+    },
+    "/generate": {
+      "post": {
+        "operationId": "generateSkillMd",
+        "summary": "Generate a conformant skill.md from an OpenAPI document",
+        "description": "Price $0.01 in USDC. Pay on Base or Solana — the 402 lists both rails. The generated file is returned in this response, with a validation report for it.",
+        "x-x402": { "price": "$0.01" },
+        "requestBody": {
+          "required": true,
+          "description": "The OpenAPI document itself, or `{ openapi: <doc>, options: {...} }`.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "openapi": { "type": "object", "description": "The OpenAPI 3.x document." },
+                  "options": { "$ref": "#/components/schemas/GenerateOptions" }
+                }
+              },
+              "example": {
+                "openapi": {
+                  "openapi": "3.1.0",
+                  "info": { "title": "example-service", "summary": "Signed timestamps." },
+                  "servers": [{ "url": "https://example.com" }],
+                  "paths": {
+                    "/now": {
+                      "get": {
+                        "summary": "Current UTC time, signed",
+                        "x-x402": { "price": "$0.001" },
+                        "responses": {
+                          "200": { "description": "OK" },
+                          "402": { "description": "Payment required" }
+                        }
+                      }
+                    }
+                  }
+                },
+                "options": { "baseUrl": "https://example.com", "contact": "ops@example.com" }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The generated skill.md, plus its own validation report.",
+            "headers": {
+              "X-PAYMENT-RESPONSE": {
+                "description": "Base64 JSON settlement receipt.",
+                "schema": { "type": "string" }
+              }
+            },
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/GenerateResponse" } }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "402": { "$ref": "#/components/responses/PaymentRequired" }
+        }
+      }
+    },
+    "/validate": {
+      "post": {
+        "operationId": "validateSkillMd",
+        "summary": "Validate a skill.md and return a report with fixes",
+        "description": "Price $0.002 in USDC. Pay on Base or Solana — the 402 lists both rails. A non-conformant document is a 200 with `valid: false`, not an error — you paid for the report and the report is the artifact.",
+        "x-x402": { "price": "$0.002" },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "text/markdown": { "schema": { "type": "string" } },
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["skillMd"],
+                "properties": { "skillMd": { "type": "string" } }
+              },
+              "example": { "skillMd": "# my-service\n\nDoes a thing.\n\n## Payment\n…" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The validation report.",
+            "headers": {
+              "X-PAYMENT-RESPONSE": {
+                "description": "Base64 JSON settlement receipt.",
+                "schema": { "type": "string" }
+              }
+            },
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ValidationReport" } }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "402": { "$ref": "#/components/responses/PaymentRequired" }
+        }
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "PaymentRequired": {
+        "description": "Payment required. The `accepts` array lists both rails — USDC on Base and USDC on Solana. Sign one, base64 it into `X-PAYMENT`, retry.",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/PaymentRequiredBody" },
+            "example": {
+              "x402Version": 1,
+              "error": "X-PAYMENT header is required",
+              "accepts": [
+                {
+                  "scheme": "exact",
+                  "network": "base-sepolia",
+                  "maxAmountRequired": "10000",
+                  "resource": "http://localhost:4029/generate",
+                  "description": "Generate a conformant skill.md from a posted OpenAPI document",
+                  "mimeType": "application/json",
+                  "payTo": "0x40252CFDF8B20Ed757D61ff157719F33Ec332402",
+                  "maxTimeoutSeconds": 60,
+                  "asset": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+                  "extra": { "name": "USDC", "version": "2" }
+                },
+                {
+                  "scheme": "exact",
+                  "network": "solana",
+                  "maxAmountRequired": "10000",
+                  "resource": "http://localhost:4029/generate",
+                  "description": "Generate a conformant skill.md from a posted OpenAPI document",
+                  "mimeType": "application/json",
+                  "payTo": "WwwuGbqHrwF5RG89KhUbmRWEvjnRH9k5kVM5p7T3WwW",
+                  "maxTimeoutSeconds": 60,
+                  "asset": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+                  "extra": {
+                    "name": "USD Coin",
+                    "decimals": 6,
+                    "feePayer": "2wKupLR9q6wXYppw8Gr2NvWxKBUqm4PPJKkQfoxHDBg4"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "BadRequest": {
+        "description": "The request could not be parsed. A non-conformant skill.md is NOT this — it is a 200 with `valid: false`.",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "required": ["error"],
+        "properties": {
+          "error": {
+            "type": "string",
+            "enum": [
+              "BAD_REQUEST",
+              "NOT_AN_OPENAPI_DOCUMENT",
+              "GENERATE_FAILED",
+              "VALIDATE_FAILED"
+            ]
+          },
+          "message": { "type": "string" }
+        }
+      },
+      "PaymentRequirements": {
+        "type": "object",
+        "description": "One accepted way to pay for this resource (one rail).",
+        "required": [
+          "scheme",
+          "network",
+          "maxAmountRequired",
+          "resource",
+          "description",
+          "mimeType",
+          "payTo",
+          "maxTimeoutSeconds",
+          "asset"
+        ],
+        "properties": {
+          "scheme": { "type": "string", "enum": ["exact"] },
+          "network": {
+            "type": "string",
+            "enum": ["base", "base-sepolia", "solana", "solana-devnet"]
+          },
+          "maxAmountRequired": {
+            "type": "string",
+            "description": "Amount in asset base units (USDC has 6 decimals)."
+          },
+          "resource": { "type": "string", "format": "uri" },
+          "description": { "type": "string" },
+          "mimeType": { "type": "string" },
+          "payTo": { "type": "string" },
+          "maxTimeoutSeconds": { "type": "integer" },
+          "asset": { "type": "string" },
+          "extra": { "type": "object" }
+        }
+      },
+      "PaymentRequiredBody": {
+        "type": "object",
+        "required": ["x402Version", "accepts"],
+        "properties": {
+          "x402Version": { "type": "integer", "enum": [1] },
+          "error": { "type": "string" },
+          "accepts": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "$ref": "#/components/schemas/PaymentRequirements" }
+          }
+        }
+      },
+      "Rule": {
+        "type": "object",
+        "required": ["id", "severity", "title", "fix"],
+        "properties": {
+          "id": { "type": "string", "examples": ["SM006"] },
+          "severity": { "type": "string", "enum": ["error", "warning", "info"] },
+          "title": { "type": "string" },
+          "fix": { "type": "string", "description": "What a conformant document does instead." }
+        }
+      },
+      "Finding": {
+        "type": "object",
+        "required": ["rule", "severity", "title", "detail", "fix"],
+        "properties": {
+          "rule": { "type": "string" },
+          "severity": { "type": "string", "enum": ["error", "warning", "info"] },
+          "title": { "type": "string" },
+          "detail": { "type": "string", "description": "What is wrong in THIS document." },
+          "fix": { "type": "string" },
+          "line": { "type": "integer", "description": "1-based, when the problem has a location." }
+        }
+      },
+      "GenerateOptions": {
+        "type": "object",
+        "properties": {
+          "baseUrl": { "type": "string", "description": "Overrides servers[0].url." },
+          "contact": { "type": "string", "description": "Overrides info.contact.email." },
+          "defaultPrice": {
+            "type": "string",
+            "description": "Price for paid operations with no declared amount, e.g. \"$0.001\"."
+          },
+          "frontmatter": { "type": "boolean", "default": true },
+          "rails": {
+            "type": "array",
+            "description": "Rails to document. Defaults to the suite's dual-rail pair.",
+            "items": { "type": "object" }
+          },
+          "manifestPath": { "type": "string", "default": "/.well-known/x402" },
+          "openapiPath": { "type": "string", "default": "/openapi.json" }
+        }
+      },
+      "GenerateResponse": {
+        "type": "object",
+        "required": ["skillMdVersion", "skillMd", "service", "validation", "generatedAt"],
+        "properties": {
+          "skillMdVersion": { "type": "string" },
+          "skillMd": { "type": "string", "description": "The generated file, ready to commit." },
+          "service": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "baseUrl": { "type": "string" },
+              "endpoints": { "type": "integer" },
+              "paid": { "type": "integer" }
+            }
+          },
+          "warnings": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Anything the generator had to guess. It never invents a price silently."
+          },
+          "validation": {
+            "type": "object",
+            "properties": {
+              "valid": { "type": "boolean" },
+              "score": { "type": "integer" },
+              "summary": { "type": "object" },
+              "findings": { "type": "array", "items": { "$ref": "#/components/schemas/Finding" } }
+            }
+          },
+          "generatedAt": { "type": "string", "format": "date-time" },
+          "receipt": { "type": ["object", "null"] }
+        }
+      },
+      "ValidationReport": {
+        "type": "object",
+        "required": [
+          "skillMdVersion",
+          "valid",
+          "score",
+          "summary",
+          "service",
+          "findings",
+          "checkedAt"
+        ],
+        "properties": {
+          "skillMdVersion": { "type": "string" },
+          "valid": { "type": "boolean", "description": "True when there are zero errors." },
+          "score": { "type": "integer", "minimum": 0, "maximum": 100 },
+          "summary": {
+            "type": "object",
+            "properties": {
+              "errors": { "type": "integer" },
+              "warnings": { "type": "integer" },
+              "infos": { "type": "integer" }
+            }
+          },
+          "service": {
+            "type": "object",
+            "description": "What the validator understood about the service from the document.",
+            "properties": {
+              "name": { "type": ["string", "null"] },
+              "baseUrl": { "type": ["string", "null"] },
+              "contact": { "type": ["string", "null"] },
+              "endpoints": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "method": { "type": "string" },
+                    "path": { "type": "string" },
+                    "price": { "type": "string" }
+                  }
+                }
+              },
+              "rails": {
+                "type": "object",
+                "properties": {
+                  "evm": { "type": "boolean" },
+                  "solana": { "type": "boolean" }
+                }
+              },
+              "dualRail": { "type": "boolean" }
+            }
+          },
+          "findings": { "type": "array", "items": { "$ref": "#/components/schemas/Finding" } },
+          "checkedAt": { "type": "string", "format": "date-time" },
+          "receipt": { "type": ["object", "null"] }
+        }
+      }
+    }
+  }
+}

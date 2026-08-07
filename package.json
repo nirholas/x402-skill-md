@@ -1,0 +1,70 @@
+{
+  "name": "x402-skill-md",
+  "version": "0.1.0",
+  "description": "The skill.md toolkit: generate and validate agent-discoverable skill files (the agentres.dev pattern) from OpenAPI specs",
+  "type": "module",
+  "license": "Apache-2.0",
+  "author": "nirholas <nichxbt@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nirholas/x402-skill-md"
+  },
+  "homepage": "https://nirholas.github.io/x402-skill-md/",
+  "keywords": [
+    "x402",
+    "micropayments",
+    "usdc",
+    "solana",
+    "base",
+    "ai-agents",
+    "agentic-commerce",
+    "http-402",
+    "skill-md",
+    "openapi",
+    "agent-discovery",
+    "validator"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "bin": {
+    "x402-skill-md": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "docs/spec.md",
+    "skill.md",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "dev": "tsx src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "cli": "tsx src/cli.ts",
+    "client": "tsx examples/agent-client.ts",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2",
+    "x402": "^1.2.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.10.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "viem": "^2.21.54",
+    "x402-fetch": "^1.2.0"
+  }
+}
