@@ -9,6 +9,7 @@ import {
   paymentReceipt,
   type RoutePrices,
 } from "./payments.js";
+import { ROUTE_SCHEMAS } from "./schemas.js";
 import { openapiToSkillMd } from "./generate.js";
 import { validateSkillMd } from "./validate.js";
 import { RULES, SKILL_MD_VERSION, DEFAULT_RAILS } from "./spec.js";
@@ -89,7 +90,7 @@ app.get("/openapi.json", (_req, res) => res.sendFile(path.join(ROOT, "openapi.js
 app.use(express.static(path.join(ROOT, "public")));
 
 // ---- paywall: everything below this line costs USDC ----
-app.use(paywall(PAID_ROUTES, { service: "x402-skill-md", descriptions: DESCRIPTIONS }));
+app.use(paywall(PAID_ROUTES, { service: "x402-skill-md", descriptions: DESCRIPTIONS, schemas: ROUTE_SCHEMAS }));
 
 /**
  * POST /generate — $0.01

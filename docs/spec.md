@@ -201,6 +201,7 @@ can be written against it with no guessing:
       "payTo": "0x40252CFDF8B20Ed757D61ff157719F33Ec332402",
       "maxTimeoutSeconds": 60,
       "asset": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+      "outputSchema": { "input": { "…": "§5.5" }, "output": { "…": "§5.5" } },
       "extra": { "name": "USDC", "version": "2" }
     },
     {
@@ -213,6 +214,7 @@ can be written against it with no guessing:
       "payTo": "WwwuGbqHrwF5RG89KhUbmRWEvjnRH9k5kVM5p7T3WwW",
       "maxTimeoutSeconds": 60,
       "asset": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+      "outputSchema": { "input": { "…": "§5.5" }, "output": { "…": "§5.5" } },
       "extra": {
         "name": "USD Coin",
         "decimals": 6,
@@ -233,8 +235,100 @@ Notes a document SHOULD make explicit, because clients get them wrong:
   can still transact.
 - **`resource` is the absolute URL being purchased**, path only. If the price does not vary
   with the query string, say so.
+- **`outputSchema` is elided above only to keep the example readable.** In a real challenge it
+  is spelled out in full on every entry — see §5.5.
 
-### 5.5 The receipt
+### 5.5 The invocation contract (`outputSchema`)
+
+Every accept entry SHOULD carry an `outputSchema` — the machine-readable half of what the rest
+of this document says in prose. It is what lets an agent that has never seen the service
+decide whether the call is worth the price and then make it correctly, from the challenge
+alone, with no second fetch:
+
+```json
+"outputSchema": {
+  "input": {
+    "type": "http",
+    "method": "GET",
+    "queryParams": {
+      "max": { "type": "integer", "minimum": 1, "maximum": 20, "default": 5 }
+    },
+    "pathParams": {
+      "domain": { "type": "string", "description": "Registrable domain; IDNs punycode", "x-required": true }
+    }
+  },
+  "output": {
+    "type": "object",
+    "required": ["domain", "status", "checkedAt"],
+    "properties": {
+      "domain": { "type": "string" },
+      "status": { "type": "string", "enum": ["registered", "available", "unknown"] },
+      "checkedAt": { "type": "string", "format": "date-time" }
+    }
+  }
+}
+```
+
+- **`input`** describes how to build the request. `type` is `"http"` and `method` is the
+  route's verb. Parameters are split by where they go: `queryParams` for the query string,
+  `pathParams` for `:segments` in the path. A route with a body instead sets
+  `bodyType: "json"` and lists its top-level fields in `bodyFields`. Every value is a JSON
+  Schema for that one parameter or field; mark the mandatory ones `"x-required": true`, since
+  a per-field schema has nowhere to put JSON Schema's document-level `required` array.
+- **`output`** is the JSON Schema of the 200 body — the artifact being sold (§6.3), not a
+  wrapper around it.
+
+Two rules keep this honest:
+
+1. **Derive both halves from the OpenAPI document, do not hand-write them.** The endpoint's
+   `parameters` / `requestBody` become `input`; its `200` response schema becomes `output`,
+   with `$ref`s resolved so the challenge stands alone. Discovery crawlers treat the runtime
+   402 as authoritative, so a hand-maintained copy that drifts from the spec is worse than no
+   copy at all.
+2. **Every accept entry carries the same contract.** Which rail a buyer pays on cannot change
+   what the endpoint accepts or returns, so `outputSchema` MUST be identical across the EVM
+   and Solana entries.
+
+Omitting `input` or `output` is what the x402scan discovery audit reports as
+`SCHEMA_INPUT_MISSING` / `SCHEMA_OUTPUT_MISSING`, both **errors** — it is the difference
+between a service an agent can find and one it can actually use.
+
+### 5.6 The paywall answers first
+
+**A paid route MUST return its 402 challenge before it validates the request or checks that
+the thing being asked for exists.** An unpaid `GET /verify/no-such-id-123` or an unpaid
+`POST /register` with an empty body is a *quote request*, not a malformed call, and the only
+correct answer to it is the challenge.
+
+A document SHOULD say so explicitly, because it is what makes a route probe-able:
+
+```markdown
+Every paid route answers an unpaid request with 402 regardless of what you send. A synthetic
+id or an empty body still returns the challenge, so you can price a call before making it.
+```
+
+This is not a nicety. Discovery crawlers — and any agent deciding whether a service is worth
+using — probe paid routes without paying to read the price and the contract. A route that
+answers `404 NOT_FOUND` or `400 BAD_REQUEST` first looks broken rather than paid: x402scan
+skips it, and the service can end up passing an audit while being unregisterable. It is also
+an information leak, since a 404-before-402 tells an unpaying caller which ids exist.
+
+In practice this is an ordering rule about middleware. The paywall must sit *above* every
+paid handler, and the handler must assume it only ever runs on a settled request:
+
+```ts
+app.use(paywall(PAID_ROUTES, { … }));      // 402 for anything unpaid
+app.get("/verify/:id", (req, res) => {      // only reached after settlement
+  const record = store.get(req.params.id);
+  if (!record) return res.status(404).json({ error: "NOT_FOUND" });
+  …
+});
+```
+
+A 404 for a genuinely unknown id is correct — *after* payment. Services that cannot charge for
+a miss should validate cheaply and refund, or price the lookup as the search it is.
+
+### 5.7 The receipt
 
 A document SHOULD state that paid responses carry `X-PAYMENT-RESPONSE`: base64 JSON naming
 the rail, network, transaction and payer. Agents use it to reconcile spend.

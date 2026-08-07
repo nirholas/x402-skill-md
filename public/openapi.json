@@ -41,7 +41,8 @@
               }
             }
           }
-        }
+        },
+        "security": []
       }
     },
     "/health": {
@@ -70,7 +71,8 @@
               }
             }
           }
-        }
+        },
+        "security": []
       }
     },
     "/rules": {
@@ -78,6 +80,7 @@
         "operationId": "getRules",
         "summary": "The SKILL-MD rule catalogue (free)",
         "description": "Free on purpose: you should be able to see what you are being judged against before paying to be judged.",
+        "security": [],
         "responses": {
           "200": {
             "description": "Every rule with its id, severity, title and fix.",
@@ -121,7 +124,8 @@
               }
             }
           }
-        }
+        },
+        "security": []
       }
     },
     "/.well-known/x402": {
@@ -139,7 +143,8 @@
               }
             }
           }
-        }
+        },
+        "security": []
       }
     },
     "/skill.md": {
@@ -157,7 +162,8 @@
               }
             }
           }
-        }
+        },
+        "security": []
       }
     },
     "/generate": {
