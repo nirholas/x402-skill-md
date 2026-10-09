@@ -236,3 +236,7 @@ Part of the [x402 Suite](https://github.com/nirholas/x402-suite).
 ## License
 
 Apache-2.0 — see [LICENSE](LICENSE).
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=nirholas/x402-skill-md&type=Date)](https://www.star-history.com/#nirholas/x402-skill-md&Date)
