@@ -1,0 +1,28 @@
+# x402-skill-md
+
+> The skill.md toolkit: generate and validate agent-discoverable skill files (the agentres.dev pattern) from OpenAPI specs. Defines the SKILL-MD format used across the x402 Suite.
+
+x402-skill-md is an open-source repository by nirholas, part of the three.ws ecosystem.
+
+## Docs
+
+- [README](https://github.com/nirholas/x402-skill-md/blob/HEAD/README.md): install, usage and reference
+- [What a skill.md is](https://github.com/nirholas/x402-skill-md/blob/HEAD/README.md#what-a-skillmd-is)
+- [Use it three ways](https://github.com/nirholas/x402-skill-md/blob/HEAD/README.md#use-it-three-ways)
+- [Why x402 for this](https://github.com/nirholas/x402-skill-md/blob/HEAD/README.md#why-x402-for-this)
+- [The format in one paragraph](https://github.com/nirholas/x402-skill-md/blob/HEAD/README.md#the-format-in-one-paragraph)
+- [Rules](https://github.com/nirholas/x402-skill-md/blob/HEAD/README.md#rules)
+- [Generating from OpenAPI](https://github.com/nirholas/x402-skill-md/blob/HEAD/README.md#generating-from-openapi)
+- [Quickstart (the service)](https://github.com/nirholas/x402-skill-md/blob/HEAD/README.md#quickstart-the-service)
+- [Dual-rail payment: Base or Solana](https://github.com/nirholas/x402-skill-md/blob/HEAD/README.md#dual-rail-payment-base-or-solana)
+- [AGENTS.md](https://github.com/nirholas/x402-skill-md/blob/HEAD/AGENTS.md): guidance for coding agents
+- [Full text for LLMs](https://github.com/nirholas/x402-skill-md/blob/HEAD/llms-full.txt): the README inlined
+
+## Project
+
+- [Source](https://github.com/nirholas/x402-skill-md)
+- [Issues](https://github.com/nirholas/x402-skill-md/issues)
+- [Discussions](https://github.com/nirholas/x402-skill-md/discussions)
+- [Homepage](https://nirholas.github.io/x402-skill-md/)
+- [three.ws](https://three.ws): the platform this is part of
+- [All repositories by nirholas](https://github.com/nirholas/nirholas#readme)
