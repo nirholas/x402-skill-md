@@ -1,0 +1,23 @@
+{
+  "name": "x402-skill-md",
+  "owner": {
+    "name": "nirholas"
+  },
+  "description": "Generate and validate agent-discoverable skill.md files from OpenAPI specs with the x402-skill-md CLI.",
+  "plugins": [
+    {
+      "name": "x402-skill-md",
+      "source": "./plugins/x402-skill-md",
+      "description": "Generate and validate agent-discoverable skill.md files from OpenAPI specs with the x402-skill-md CLI.",
+      "category": "development",
+      "tags": [
+        "skill-md",
+        "openapi",
+        "x402",
+        "agent-discovery",
+        "cli",
+        "validator"
+      ]
+    }
+  ]
+}
