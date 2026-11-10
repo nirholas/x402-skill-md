@@ -1,0 +1,19 @@
+{
+  "name": "x402-skill-md",
+  "version": "0.1.0",
+  "description": "Generate and validate agent-discoverable skill.md files from OpenAPI specs with the x402-skill-md CLI.",
+  "author": {
+    "name": "nirholas"
+  },
+  "repository": "https://github.com/nirholas/x402-skill-md",
+  "homepage": "https://nirholas.github.io/x402-skill-md/",
+  "license": "Apache-2.0",
+  "keywords": [
+    "skill-md",
+    "openapi",
+    "x402",
+    "agent-discovery",
+    "cli",
+    "validator"
+  ]
+}
